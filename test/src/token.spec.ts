@@ -58,13 +58,23 @@ describe("Asad Factory", function async() {
 
     await token20.approve(router.address, amount0);
     await token2.approve(router.address, amount1);
-
-    var getPairAddress = await factoryContract.getPair(token20.address, token2.address);
-
-    console.log("Pair", getPairAddress);
     console.log("Hash", await factoryContract.INIT_CODE_PAIR_HASH());
+   
+    await expect( router.addLiquidity(token20.address, token20.address, amount0, amount1, 0, 0, owner.address, 1661043392)).to.be.revertedWith("UniswapV2: IDENTICAL_ADDRESSES")
 
-    await router.addLiquidity(token20.address, token2.address, amount0, amount1, 0, 0, owner.address, 1660876756);
+    await expect( router.addLiquidity(token20.address, factoryContract.address, amount0, amount1, 0, 0, owner.address, 1661043392)).to.be.revertedWith("TransferHelper::transferFrom: transferFrom failed")
+
+    await expect( router.addLiquidity("0x0000000000000000000000000000000000000000", factoryContract.address, amount0, amount1, 0, 0, owner.address, 1661043392)).to.be.revertedWith("UniswapV2: ZERO_ADDRESS")
+   
+   
+    await expect( router.addLiquidity(token20.address, token2.address, 0, amount1, 0, 0, owner.address, 1661043392)).to.be.revertedWith("ds-math-sub-underflow")
+   
+   
+    await expect( router.addLiquidity(token20.address, token2.address, 0, 0, 1000, 1000, owner.address, 1661043392)).to.be.revertedWith("ds-math-sub-underflow")
+
+    await expect( router.addLiquidity(token20.address, token2.address, amount0, amount1, 0, 0, owner.address, 166103392)).to.be.revertedWith("UniswapV2Router: EXPIRED")
+
+   await router.addLiquidity(token20.address, token2.address, amount0, amount1, 0, 0, owner.address, 1661043392);
   });
 
   it("Remove removeLiquidity", async function () {
@@ -74,13 +84,21 @@ describe("Asad Factory", function async() {
 
     pair = UniswapV2Pair__factory.connect(getPairAddress, owner);
 
-    console.log(pair.functions);
 
-    console.log(await pair.totalSupply());
+
+    await expect(router.removeLiquidity(token20.address, token2.address, parseEther("9.99"), 0, 0, owner.address, 1661043392)).to.be.revertedWith("ds-math-sub-underflow");
+    
+    await expect(router.removeLiquidity(token20.address, token20.address, parseEther("9.99"), 0, 0, owner.address, 1661043392)).to.be.revertedWith("UniswapV2Library: IDENTICAL_ADDRESSES");
+
+    await expect(router.removeLiquidity(token20.address, factoryContract.address, parseEther("9.99"), 0, 0, owner.address, 1661043392)).to.be.reverted;
+
+    await expect(router.removeLiquidity(token20.address, token2.address, parseEther("9.99"), 100, 100, owner.address, 1661043392)).to.be.revertedWith("ds-math-sub-underflow");
+    
+    await expect(router.removeLiquidity(token20.address, token2.address, parseEther("9.99"), 100, 100, owner.address, 166104392)).to.be.revertedWith("UniswapV2Router: EXPIRED");
 
     await pair.approve(router.address, parseEther("10"));
 
-    await router.removeLiquidity(token20.address, token2.address, parseEther("9.99"), 0, 0, owner.address, 1660876756);
+    await router.removeLiquidity(token20.address, token2.address, parseEther("9.99"), 0, 0, owner.address, 1661043392);
 
     console.log(await pair.totalSupply());
   });
@@ -91,16 +109,72 @@ describe("Asad Factory", function async() {
     expect(await router.WETH()).to.be.equal(weth.address);
 
     var amount0 = parseEther("10");
-    var amount1 = parseEther("10");
+    
 
+    await expect(router.addLiquidityETH(token20.address, amount0,0 ,10, owner.address, 1661043392,({ value: parseEther("10") }))).to.be.revertedWith("TransferHelper::transferFrom: transferFrom failed");
+    
     await token20.approve(router.address, amount0);
 
-    await router.addLiquidityETH(token20.address, amount0,0 ,10, owner.address, 1660876756,({ value: parseEther("10") }));
+    await expect(router.addLiquidityETH(token20.address, 0,0 ,10, owner.address, 1661043392,({ value: parseEther("10") }))).to.be.revertedWith("ds-math-sub-underflow");
+
+    await expect(router.addLiquidityETH(token20.address, 0,0 ,10, owner.address, 1661043392)).to.be.revertedWith("ds-math-sub-underflow");
+
+    await expect(router.addLiquidityETH(token20.address, amount0,0 ,10, owner.address, 166104392,({ value: parseEther("10") }))).to.be.revertedWith("UniswapV2Router: EXPIRED");
+
+    await router.addLiquidityETH(token20.address, amount0,0 ,10, owner.address, 1661043392,({ value: parseEther("10") }))
+
+  
   });
 
 
-  it("Remove removeLiquidity With Eth", async function () {
-    // var getPairAddress = await factoryContract.getPair(token20.address,token2.address);
+
+  it("SwapEthFor Tokens",async () => {
+    await expect(router.swapETHForExactTokens(parseEther("1"),[weth.address,token20.address],user.address,1661043392,({value:parseEther("1")}))).to.be.revertedWith("UniswapV2Router: EXCESSIVE_INPUT_AMOUNT")
+
+    await expect(router.swapETHForExactTokens(parseEther("1"),[token20.address,token20.address],user.address,1661043392,({value:parseEther("2")}))).to.be.revertedWith("UniswapV2Router: INVALID_PATH")
+
+    await expect(router.swapETHForExactTokens(parseEther("1"),[token20.address,weth.address],user.address,1661043392,({value:parseEther("2")}))).to.be.revertedWith("UniswapV2Router: INVALID_PATH")
+
+    await expect(router.swapETHForExactTokens(parseEther("1"),[weth.address,token20.address],user.address,166104392,({value:parseEther("2")}))).to.be.revertedWith("UniswapV2Router: EXPIRED")
+
+    await router.swapETHForExactTokens(parseEther("0.1"),[weth.address,token20.address],user.address,1661043392,({value:parseEther("1")}))
+    
+    await router.swapExactETHForTokens(parseEther("0.1"),[weth.address,token20.address],user.address,1661043392,({value:parseEther("1")}))
+    
+  })
+
+  it("swapExactTokensForETH",async () => {
+    var amount0 = parseEther("10"); 
+
+    await token20.approve(router.address, amount0);
+    await router.swapExactTokensForETH(parseEther("2"),parseEther("1"),[token20.address,weth.address],user.address,1661043392)
+
+    
+  })
+
+
+  it("swapExactTokensForTokens",async () => {
+    var amount0 = parseEther("10"); 
+
+    await token20.approve(router.address, amount0);
+
+    await router.swapExactTokensForTokens(parseEther("2"),parseEther("0.5"),[token20.address,weth.address],user.address,1661043392)
+    await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(parseEther("2"),parseEther("0.5"),[token20.address,weth.address],user.address,1661043392)
+    
+  })
+
+
+  it("swapTokensForExactTokens",async () => {
+    // var amount0 = parseEther("10"); 
+
+    // await token20.approve(router.address, amount0);
+
+    await router.swapTokensForExactTokens(parseEther("0.3"),parseEther("1"),[token20.address,weth.address],user.address,1661043392)
+    
+  })
+
+
+  it("Remove removeLiquidity With Eth && removeLiquidityETHSupportingFeeOnTransferTokens ", async function () {
 
     console.log("get pair", await factoryContract.allPairs(1));
 
@@ -108,19 +182,23 @@ describe("Asad Factory", function async() {
     var ethPair = UniswapV2Pair__factory.connect(await factoryContract.allPairs(1), owner)
 
 
-    // console.log("get pair", getPairAddress);
-
-    // pair = UniswapV2Pair__factory.connect(getPairAddress, owner);
-
-    console.log(ethPair.functions);
-
-    // console.log(await pair.totalSupply());
+    console.log(await ethPair.totalSupply());
 
     await ethPair.approve(router.address, parseEther("10"));
 
-    await router.removeLiquidityETH(token20.address, parseEther("9.99"),0 ,10, owner.address, 1660876756);
+    var amount0 = parseEther("10"); 
+
+    await token20.approve(router.address, amount0);
+
+
+
+    await router.removeLiquidityETH(token20.address, parseEther("3"),0 ,10, owner.address, 1661043392);
+    await router.removeLiquidityETHSupportingFeeOnTransferTokens(token20.address, parseEther("2"),0 ,10, owner.address, 1661043392);
 
     console.log(await ethPair.totalSupply());
+
+
+    console.log(router.functions)
   });
 
 

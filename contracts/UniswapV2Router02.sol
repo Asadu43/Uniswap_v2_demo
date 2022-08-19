@@ -41,7 +41,6 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         uint amountBMin
     ) internal  returns (uint amountA, uint amountB) {
         // create the pair if it doesn't exist yet
-        console.log("pair: ",IUniswapV2Factory(factory).getPair(tokenA, tokenB));
         if (IUniswapV2Factory(factory).getPair(tokenA, tokenB) == address(0)) {
             IUniswapV2Factory(factory).createPair(tokenA, tokenB);
         }
@@ -290,6 +289,8 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
     {
         require(path[path.length - 1] == WETH, 'UniswapV2Router: INVALID_PATH');
         amounts = UniswapV2Library.getAmountsOut(factory, amountIn, path);
+
+        console.log(amounts[amounts.length - 1]);
         require(amounts[amounts.length - 1] >= amountOutMin, 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
         TransferHelper.safeTransferFrom(
             path[0], msg.sender, UniswapV2Library.pairFor(factory, path[0], path[1]), amounts[0]
@@ -306,6 +307,8 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
     {
         require(path[0] == WETH, 'UniswapV2Router: INVALID_PATH');
         amounts = UniswapV2Library.getAmountsIn(factory, amountOut, path);
+
+        console.log("Amount: ",amounts[0]);
         require(amounts[0] <= msg.value, 'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT');
         IWETH(WETH).deposit.value(amounts[0])();
         assert(IWETH(WETH).transfer(UniswapV2Library.pairFor(factory, path[0], path[1]), amounts[0]));
