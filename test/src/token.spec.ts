@@ -110,7 +110,6 @@ describe("Asad Factory", function async() {
 
     var amount0 = parseEther("10");
     
-
     await expect(router.addLiquidityETH(token20.address, amount0,0 ,10, owner.address, 1661214721,({ value: parseEther("10") }))).to.be.revertedWith("TransferHelper::transferFrom: transferFrom failed");
     
     await token20.approve(router.address, amount0);
@@ -122,7 +121,6 @@ describe("Asad Factory", function async() {
     await expect(router.addLiquidityETH(token20.address, amount0,0 ,10, owner.address, 166104392,({ value: parseEther("10") }))).to.be.revertedWith("UniswapV2Router: EXPIRED");
 
     await router.addLiquidityETH(token20.address, amount0,0 ,10, owner.address, 1661214721,({ value: parseEther("10") }))
-
   
   });
 
@@ -180,14 +178,18 @@ describe("Asad Factory", function async() {
 
     await router.swapExactTokensForTokens(parseEther("2"),parseEther("0.5"),[token20.address,weth.address],user.address,1661214721)
 
+
+// Identical to swapExactTokensForTokens, but succeeds for tokens that take a fee on transfer.
     await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(parseEther("2"),parseEther("0.5"),[token20.address,weth.address],user.address,1661214721)
 
 
     await router.swapTokensForExactTokens(parseEther("0.3"),parseEther("1"),[token20.address,weth.address],user.address,1661214721)
 
+    // amount0Out=1662497915624478906
+    // amount0Out=1662497915624478906
+
     
   })
-
 
 
   it("Remove removeLiquidity With Eth && removeLiquidityETHSupportingFeeOnTransferTokens ", async function () {
@@ -206,9 +208,8 @@ describe("Asad Factory", function async() {
 
     await token20.approve(router.address, amount0);
 
-
-
     await router.removeLiquidityETH(token20.address, parseEther("3"),0 ,10, owner.address, 1661214721);
+
     await router.removeLiquidityETHSupportingFeeOnTransferTokens(token20.address, parseEther("2"),0 ,10, owner.address, 1661214721);
 
     console.log(await ethPair.totalSupply());
